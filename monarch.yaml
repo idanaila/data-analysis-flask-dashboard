@@ -1,0 +1,49 @@
+- name: Install Monarch
+  user: root
+  hosts: centos
+  vars:
+    local_path: /home/ansible
+    remote_path: /opt/monarch 
+  become: yes
+  tasks:
+    - name: latest version of required packages
+      yum:
+        name:
+          - python3
+          - python3-devel
+          - gcc
+        state: latest
+    - name: install setuptools via yum
+      yum:
+        name: python-setuptools
+        state: present
+    - name: install psutil via pip
+      ansible.builtin.pip:  
+        name: psutil
+        executable: pip3
+    - name: create a directory for monarch log
+      file:
+        path: /var/log/monarch
+        owner: root
+        state: directory
+        mode: 0755
+    - name: create a directory for monarch executables
+      file:
+        path: /opt/monarch
+        owner: root
+        state: directory
+        mode: 0755
+    - name: copy executable in /opt
+      copy:
+        src: "{{ local_path }}/monarch.py"
+        dest: "{{ remote_path }}/monarch.py"
+    - name: copy systemd file in /usr
+      copy:
+        src: "{{ local_path }}/monarch.service"
+        dest: /usr/lib/systemd/system/monarch.service
+        mode: 0644
+    - name: enable and start monarch
+      service:
+        name: monarch
+        enabled: true
+        state: started
